@@ -5,8 +5,6 @@ import os
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings
 
-APP_ENV = os.getenv("APP_ENV", "development")
-
 
 class Settings(BaseSettings):
     APP_NAME: str = "FastAPI Template"
@@ -45,7 +43,7 @@ class Settings(BaseSettings):
     # Sentry Webhook 签名密钥（Sentry Alert Rule 中配置，为空则跳过验证）
     SENTRY_WEBHOOK_SECRET: str = ""
 
-    model_config = {"env_file": f".env.{APP_ENV}", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
 settings = Settings()

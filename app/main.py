@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sentry_sdk.integrations.logging import LoggingIntegration
 
-from app.core.config import APP_ENV, settings
+from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import access_log_middleware
@@ -24,8 +24,7 @@ def init_sentry() -> None:
         return
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
-        environment=APP_ENV,
-        traces_sample_rate=1.0 if APP_ENV == "development" else 0.1,
+        traces_sample_rate=0.1,
         send_default_pii=False,
         integrations=[
             LoggingIntegration(
@@ -34,7 +33,7 @@ def init_sentry() -> None:
             ),
         ],
     )
-    logger.info("Sentry initialized (env=%s)", APP_ENV)
+    logger.info("Sentry initialized")
 
 
 # ---------- lifespan：应用启动/关闭时执行 ----------
@@ -59,9 +58,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
     description="FastAPI Template — 用户认证与 CRUD 示例项目",
-    docs_url="/docs" if APP_ENV != "production" else None,
-    redoc_url="/redoc" if APP_ENV != "production" else None,
-    openapi_url="/openapi.json" if APP_ENV != "production" else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
     swagger_ui_parameters={"persistAuthorization": True},
 )
 
