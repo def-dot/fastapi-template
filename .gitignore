@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env.development
+.env.test
+.env.production
+*.egg-info/
+logs/
+.vscode/
+.coverage
+.claude

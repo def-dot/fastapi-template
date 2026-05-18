@@ -1,0 +1,66 @@
+x-backend-env: &backend-env
+  POSTGRES_USER: ${POSTGRES_USER?variable not set}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?variable not set}
+  POSTGRES_DB: ${POSTGRES_DB?variable not set}
+  POSTGRES_SERVER: db
+  POSTGRES_PORT: ${POSTGRES_PORT}
+  SECRET_KEY: ${SECRET_KEY}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER?variable not set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?variable not set}
+      POSTGRES_DB: ${POSTGRES_DB?variable not set}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db_migrate:
+    build: .
+    environment: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+    command: alembic upgrade head
+
+  backend:
+    build: .
+    environment:
+      <<: *backend-env
+      APP_ENV: ${APP_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL}
+      WORKERS: ${WORKERS}
+    depends_on:
+      db_migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+        restart: true
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  traefik:
+    image: traefik:v3.3
+    command:
+      - "--providers.file=true"
+      - "--providers.file.filename=/etc/traefik/traefik.yml"
+      - "--entrypoints.api.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+
+volumes:
+  pgdata:
