@@ -1,13 +1,12 @@
 """应用配置 - 使用 pydantic Settings 管理环境变量"""
 
-import os
-
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     APP_NAME: str = "FastAPI Template"
+    APP_ENV: str = "dev"
     DB_DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
     WORKERS: int = 4
@@ -36,11 +35,8 @@ class Settings(BaseSettings):
 
     # Sentry
     SENTRY_DSN: str = ""
-
-    # 飞书
+    SENTRY_SAMPLE_RATE: float = 0.1
     FEISHU_WEBHOOK_URL: str = ""
-
-    # Sentry Webhook 签名密钥（Sentry Alert Rule 中配置，为空则跳过验证）
     SENTRY_WEBHOOK_SECRET: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}

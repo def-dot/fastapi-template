@@ -1,39 +1,19 @@
 """FastAPI 应用入口"""
 
-import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
-import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sentry_sdk.integrations.logging import LoggingIntegration
 
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import access_log_middleware
 from app.routers import auth, external_api, items, system, users, webhooks
+from app.utils import init_sentry
 
 logger = get_logger(__name__)
-
-
-def init_sentry() -> None:
-    if not settings.SENTRY_DSN:
-        logger.info("Sentry DSN not configured, skipping initialization")
-        return
-    sentry_sdk.init(
-        dsn=settings.SENTRY_DSN,
-        traces_sample_rate=0.1,
-        send_default_pii=False,
-        integrations=[
-            LoggingIntegration(
-                level=logging.INFO,
-                event_level=logging.ERROR,
-            ),
-        ],
-    )
-    logger.info("Sentry initialized")
 
 
 # ---------- lifespan：应用启动/关闭时执行 ----------
@@ -58,9 +38,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
     description="FastAPI Template — 用户认证与 CRUD 示例项目",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    docs_url="/docs" if settings.APP_ENV == "dev" else None,
+    openapi_url="/openapi.json" if settings.APP_ENV == "dev" else None,
     swagger_ui_parameters={"persistAuthorization": True},
 )
 

@@ -9,6 +9,7 @@ from app.utils.retry import (
     db_retry,
     file_retry,
 )
+from app.utils.sentry import init_sentry
 
 __all__ = [
     "db_retry",
@@ -16,4 +17,5 @@ __all__ = [
     "api_retry_with_http_errors",
     "file_retry",
     "cache_retry",
+    "init_sentry",
 ]
