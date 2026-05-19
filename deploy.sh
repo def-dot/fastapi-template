@@ -23,7 +23,7 @@ cp "$ENV_FILE" .env
 # ---------- 2. 拉取最新镜像 ----------
 echo ""
 echo "[2/7] 拉取最新镜像..."
-$DC pull backend db_migrate
+$DC pull backend db_migrate || true
 
 # ---------- 3. 启动数据库 ----------
 echo ""
@@ -56,7 +56,7 @@ $DC up -d
 # ---------- 7. 健康检查 ----------
 echo ""
 echo "[7/7] 健康检查..."
-HEALTH_URL="http://localhost:8000/health"
+HEALTH_URL="http://localhost/health"
 MAX_RETRIES=30
 for i in $(seq 1 $MAX_RETRIES); do
     if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
