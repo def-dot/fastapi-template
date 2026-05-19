@@ -35,10 +35,6 @@ def setup_logging() -> None:
         handlers=handlers,
     )
 
-    # 关闭 uvicorn 自带 access log（已由中间件记录）
-    logging.getLogger("uvicorn.access").setLevel(logging.CRITICAL + 1)
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO if settings.DB_DEBUG else logging.WARNING)
-
 
 def get_logger(name: str) -> logging.Logger:
     """获取命名 logger"""
