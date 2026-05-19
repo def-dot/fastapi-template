@@ -1,8 +1,8 @@
 __pycache__/
 *.pyc
-.env.development
-.env.test
-.env.production
+.env.dev
+.env.staging
+.env.prod
 *.egg-info/
 logs/
 .vscode/

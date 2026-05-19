@@ -41,14 +41,14 @@ def init_sentry() -> None:
 async def lifespan(app: FastAPI) -> Any:
     init_sentry()
     setup_logging()
-    try:
-        import subprocess
+    # try:
+    #     import subprocess
 
-        subprocess.check_call(["alembic", "upgrade", "head"])
-        logger.info("%s started — DB migrated", settings.APP_NAME)
-    except Exception:
-        logger.critical("Failed to initialize database", exc_info=True)
-        raise
+    #     subprocess.check_call(["alembic", "upgrade", "head"])
+    #     logger.info("%s started — DB migrated", settings.APP_NAME)
+    # except Exception:
+    #     logger.critical("Failed to initialize database", exc_info=True)
+    #     raise
     yield
     logger.info("Shutting down...")
 
