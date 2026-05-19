@@ -1,195 +1,185 @@
-# FastAPI Demo
+# FastAPI Template
 
-用户认证与 CRUD 示例项目，基于 FastAPI + SQLModel + PostgreSQL。
+FastAPI + SQLModel + PostgreSQL 项目模板，包含用户认证、CRUD、统一响应格式、容器化部署等开箱即用的功能。
 
-## 功能
+## 特性
 
-- JWT 认证（access token + refresh token）
-- 用户名/邮箱登录
-- 用户 CRUD
-- Item CRUD（所有权校验）
-- 统一响应格式 `{code, msg, data}`
-- 全局异常处理 + 参数校验
-- 请求日志（IP、路径、参数、耗时、错误堆栈）
-- 日志文件轮转
-- Swagger 文档（Authorize 按钮可直接测试认证接口）
-- Gunicorn + Uvicorn 多进程
-- Docker 容器化部署
-- GitHub Actions CI/CD
+- **JWT 认证** — access token + refresh token，支持用户名/邮箱登录
+- **CRUD 示例** — 用户管理 + Item CRUD（所有权校验）
+- **统一响应格式** — `{code, msg, data}`
+- **全局异常处理** — 业务异常、参数校验、HTTP 异常统一拦截
+- **请求日志** — IP、路径、参数、耗时、错误堆栈
+- **Sentry 集成** — 错误追踪 + 性能监控
+- **飞书通知** — Webhook 告警
+- **API 文档** — Swagger UI（开发环境自动开启，生产环境关闭）
+- **Docker 部署** — Traefik 反代 + PostgreSQL + 自动备份 + 数据库迁移
+- **GitHub Actions CI** — 单元测试 + Compose 部署验证
 
 ## 项目结构
 
 ```
 app/
-  main.py            # 应用入口
+  main.py              # 应用入口
   core/
-    config.py        # pydantic-settings 配置
-    database.py      # SQLModel 异步引擎
-    security.py      # JWT + 密码工具
-    logging.py       # 日志配置（控制台 + 文件轮转）
-    exceptions.py    # 全局异常处理器
-    middleware.py     # 访问日志中间件
+    config.py          # pydantic-settings 配置
+    database.py        # SQLModel 异步引擎
+    security.py        # JWT + 密码工具
+    logging.py         # 日志配置（控制台 + 文件轮转）
+    exceptions.py      # 全局异常处理器
+    middleware.py      # 访问日志中间件
+    feishu.py          # 飞书 Webhook
   models/
-    user.py          # User 模型
-    item.py          # Item 模型
+    user.py            # User 模型
+    item.py            # Item 模型
   routers/
-    auth.py          # 注册 / 登录 / 刷新令牌
-    users.py         # 用户 CRUD
-    items.py         # Item CRUD
+    auth.py            # 注册 / 登录 / 刷新令牌 / 重置密码
+    users.py           # 用户 CRUD
+    items.py           # Item CRUD
+    external_api.py    # 外部 API 调用示例
+    webhooks.py        # Sentry Webhook
+    system.py          # 健康检查
   schemas/
-    schemas.py       # Pydantic 请求/响应模型
-  alembic/           # 数据库迁移
-gunicorn.conf.py     # Gunicorn 配置
-docker-compose.yml   # Docker Compose
-Dockerfile           # 容器构建
-tests/               # 测试用例
+    schemas.py         # Pydantic 请求/响应模型
+  utils/
+    retry.py           # 重试装饰器
+    sentry.py          # Sentry 初始化
+  alembic/             # 数据库迁移
+db_backup/             # 数据库备份脚本
+deploy.sh              # 生产部署脚本
+dev.sh                 # 开发启动脚本
 ```
 
-## 快速开始
-
-### 环境要求
+## 环境要求
 
 - Python 3.12+
-- PostgreSQL 16+（本地开发可用 SQLite）
+- Docker & Docker Compose（生产部署）
+- uv（包管理）
 
-### 1. 安装依赖
+## 开发
 
-```bash
-pip install -e ".[dev]"
-```
-
-### 2. 配置环境变量
+### 手动启动
 
 ```bash
-cp .env.example .env
+cp .env.dev .env                     # 同步配置
+uv sync --all-extras                 # 安装依赖
+docker compose up -d                 # 启动数据库
+uv run alembic upgrade head          # 迁移
+uv run fastapi run app/main.py --reload  # 启动服务
 ```
 
-编辑 `.env`，按需修改（本地开发默认用 SQLite，无需额外配置 PostgreSQL）：
-
-```ini
-DATABASE_URL=sqlite+aiosqlite:///./app.db    # SQLite（默认）
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/dbname  # PostgreSQL
-SECRET_KEY=your-random-secret-key              # 生产环境务必修改
-```
-
-### 3. 启动服务
-
-**开发模式（热重载）：**
+### 验证
 
 ```bash
-uvicorn app.main:app --reload
-```
-
-**开发模式（单进程）：**
-
-```bash
-python -m app.main
-```
-
-**生产模式（Gunicorn 多进程）：**
-
-```bash
-fastapi run --workers ${WORKERS:-4} main.py
-```
-
-**Docker 部署（Traefik + PostgreSQL + Web）：**
-
-```bash
-# 构建并启动
-docker compose up -d --build
-
-# 查看日志
-docker compose logs -f backend
-
-# 停止
-docker compose down
-
-# 停止并清除数据卷
-docker compose down -v
-```
-
-服务端口：
-- **http://localhost:80** — 应用（通过 Traefik 反向代理）
-- **http://localhost:8080** — Traefik Dashboard
-
-### 4. 验证启动
-
-```bash
-curl http://localhost/health
+curl http://localhost:8000/health
 # {"code":200,"msg":"ok","data":{"status":"ok"}}
 ```
 
-### 5. 访问 API 文档
+### API 文档
 
-| 地址 | 说明 |
-|------|------|
-| http://localhost:80/docs | Swagger UI（可交互测试） |
-| http://localhost:80/redoc | ReDoc（只读文档） |
+开发环境访问 http://localhost:8000/docs
 
-Swagger 使用：点击 Authorize → 输入用户名/密码 → 自动获取 token → 测试认证接口。
-
-### 6. 运行测试
+### 运行测试
 
 ```bash
-pytest tests/ -v
-
-# 带覆盖率报告
-pytest tests/ -v --cov
+uv run pytest tests/ -v --cov
 ```
 
-### 7. 代码检查
+### 代码质量
 
 ```bash
-# Ruff — 代码规范 + 格式化
-ruff check .
-ruff format --check .
+# Ruff — 代码检查 + 格式化
+uv run ruff check .
+uv run ruff format --check .
 
 # Mypy — 类型检查
-mypy app/
+uv run mypy app/
+
+# Pre-commit — 提交前自动检查（ruff + mypy + 通用检查）
+uv run pre-commit install    # 安装 git hooks（只需一次）
+uv run pre-commit run --all-files  # 手动触发全量检查
 ```
 
-## 统一响应格式
+### 数据库迁移
 
-**成功：**
-```json
-{"code": 200, "msg": "ok", "data": {...}}
+```bash
+uv run alembic revision --autogenerate -m "description"  # 生成迁移
+uv run alembic upgrade head                               # 执行迁移
+uv run alembic downgrade -1                               # 回滚
 ```
 
-**错误：**
-```json
-{"code": 404, "msg": "用户不存在", "data": null}
+## CI
+
+推送代码和 PR 时自动触发：
+
+| Workflow | 触发条件 | 说明 |
+|----------|----------|------|
+| **Lint** | push/PR to main | Ruff 代码检查 + 格式化 + Mypy 类型检查 |
+| **Test Backend** | push/PR to main | pytest 单元测试 + 覆盖率检查 |
+| **Test Compose** | push/PR to main | 构建镜像 → 部署 → 健康检查，验证完整部署流程 |
+
+## 部署
+
+### 环境配置
+
+提供三套环境配置：
+
+| 文件 | 环境 | 说明 |
+|------|------|------|
+| `.env.dev` | 开发 | DB 在本地，SQL 日志开启 |
+| `.env.staging` | 预发布 | DB 在 Docker，阿里云 ACR 镜像 |
+| `.env.prod` | 生产 | DB 在 Docker，阿里云 ACR 镜像 |
+
+### 部署命令
+
+```bash
+# 部署生产环境
+bash deploy.sh prod
+
+# 部署预发布环境
+bash deploy.sh staging
 ```
 
-**登录（OAuth2 兼容，直接返回 token）：**
-```json
-{"access_token": "...", "refresh_token": "...", "token_type": "bearer"}
+`deploy.sh` 执行流程：
+1. 同步配置（`.env.{env}` → `.env`）
+2. 拉取最新镜像（阿里云 ACR）
+3. 启动数据库
+4. 备份数据库
+5. 执行数据库迁移
+6. 启动服务
+7. 健康检查
+
+### 架构
+
+```
+客户端 → Traefik(:80) → Backend(:8000) → PostgreSQL(:5432)
+```
+
+### 镜像构建与推送
+
+```bash
+docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG} .
+docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
 ```
 
 ## 环境变量
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `APP_NAME` | FastAPI Demo | 应用名称 |
-| `DEBUG` | false | 调试模式 |
+| `APP_ENV` | dev | 环境（dev / staging / prod） |
 | `LOG_LEVEL` | INFO | 日志级别 |
-| `DATABASE_URL` | postgresql+asyncpg://... | 数据库连接 |
-| `SECRET_KEY` | change-me-... | JWT 签名密钥 |
-| `ALGORITHM` | HS256 | JWT 算法 |
+| `DB_DEBUG` | True | 是否打印 SQL |
+| `WORKERS` | 4 | Worker 进程数 |
+| `POSTGRES_SERVER` | localhost | 数据库地址 |
+| `POSTGRES_PORT` | 5432 | 数据库端口 |
+| `POSTGRES_USER` | postgres | 数据库用户 |
+| `POSTGRES_PASSWORD` | postgres | 数据库密码 |
+| `POSTGRES_DB` | fastapi_template | 数据库名 |
+| `SECRET_KEY` | | JWT 签名密钥 |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | 30 | Access token 过期时间 |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | 7 | Refresh token 过期时间 |
-| `WORKERS` | 4 | Gunicorn worker 数 |
-
-## 数据库迁移
-
-```bash
-# 生成迁移
-alembic revision --autogenerate -m "description"
-
-# 执行迁移
-alembic upgrade head
-
-# 回滚
-alembic downgrade -1
-```
-
-test aliyun ACR
+| `SENTRY_DSN` | | Sentry DSN |
+| `SENTRY_SAMPLE_RATE` | 0.1 | Sentry 采样率 |
+| `FEISHU_WEBHOOK_URL` | | 飞书 Webhook 地址 |
+| `DOCKER_REGISTRY` | | 镜像仓库地址（生产） |
+| `DOCKER_IMAGE` | | 镜像名（生产） |
+| `DOCKER_TAG` | | 镜像标签（生产） |

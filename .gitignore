@@ -1,8 +1,5 @@
 __pycache__/
 *.pyc
-.env.dev
-.env.staging
-.env.prod
 *.egg-info/
 logs/
 .vscode/

@@ -11,4 +11,4 @@ router = APIRouter(tags=["系统"])
 
 @router.get("/health", response_model=ResponseBase[dict[str, Any]])
 async def health_check() -> Any:
-    return ResponseBase(data={"status": "ok"})
+    return ResponseBase(data={"status": "ssss"})
