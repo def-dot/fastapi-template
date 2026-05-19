@@ -41,7 +41,6 @@ async def setup_db():
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     """异步 HTTP 测试客户端"""
-    print(f"\nDEBUG: app.lifespan_context is {app.router.lifespan_context}")
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
 
@@ -50,7 +49,7 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 async def auth_token(client: AsyncClient) -> str:
     """注册一个用户并返回 access_token"""
     await client.post(
-        "/api/auth/register",
+        "/api/v1/auth/register",
         json={
             "username": "testuser",
             "email": "test@example.com",
@@ -59,13 +58,13 @@ async def auth_token(client: AsyncClient) -> str:
         },
     )
     resp = await client.post(
-        "/api/auth/login",
+        "/api/v1/auth/login",
         data={
             "username": "testuser",
             "password": "secret123",
         },
     )
-    return resp.json()["access_token"]
+    return resp.json()["data"]["access_token"]
 
 
 @pytest_asyncio.fixture

@@ -115,7 +115,7 @@ if __name__ == "__main__":
         # 测试 API 调用
         print("2. API 调用重试测试:")
         try:
-            result = await example_api_call("/api/users")
+            result = await example_api_call("/api/v1/users")
             print(f"   结果: {result}\n")
         except Exception as e:
             print(f"   失败: {e}\n")

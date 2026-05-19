@@ -107,7 +107,7 @@ router = APIRouter()
 @router.get("/external-data")
 async def get_external_data(current_user: CurrentUser):
     try:
-        data = await fetch_external_data("/api/data")
+        data = await fetch_external_data("/api/v1/data")
         return {"data": data}
     except Exception as e:
         raise HTTPException(status_code=503, detail="外部服务不可用")
