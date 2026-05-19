@@ -188,4 +188,4 @@ docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
 | `DOCKER_TAG` | | 镜像标签（生产） |
 
 
-test branch protect
+test merge
