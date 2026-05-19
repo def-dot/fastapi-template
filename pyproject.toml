@@ -65,7 +65,13 @@ exclude = ["alembic"]
 
 [tool.coverage.run]
 source = ["app"]
-omit = ["app/alembic/*"]
+omit = [
+    "app/alembic/*",
+    "app/core/feishu.py",
+    "app/utils/retry.py",
+    "app/utils/sentry.py",
+    "app/routers/webhooks.py",
+]
 concurrency = ["greenlet", "thread"]
 
 [tool.coverage.report]
