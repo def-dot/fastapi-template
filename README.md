@@ -1,19 +1,18 @@
 # FastAPI Template
 
-FastAPI + SQLModel + PostgreSQL 项目模板，包含用户认证、CRUD、统一响应格式、容器化部署等开箱即用的功能。
+FastAPI 项目模板，适合基于 FastAPI 构建高性能 Web 应用，开箱即用。涵盖 JWT 认证、CRUD 等基础特性，配备 Ruff/Mypy/Pytest 质量管控与 GitHub Actions CI/CD，生产环境基于 Docker Compose 部署，并集成 Sentry 监控与飞书告警。
 
 ## 特性
-
-- **JWT 认证** — access token + refresh token，支持用户名/邮箱登录
-- **CRUD 示例** — 用户管理 + Item CRUD（所有权校验）
-- **统一响应格式** — `{code, msg, data}`
+- **异步架构** — 数据库驱动、ORM 会话、路由处理全异步，Uvicorn 多 Worker 水平扩展
+- **FastAPI特性实例** — 依赖注入（Depends）、Pydantic 数据校验与序列化、BackgroundTasks 后台任务、中间件、请求响应
+- **统一响应格式** — `{code, msg, data}` 泛型包装，分页响应，预定义错误响应模型
 - **全局异常处理** — 业务异常、参数校验、HTTP 异常统一拦截
-- **请求日志** — IP、路径、参数、耗时、错误堆栈
-- **Sentry 集成** — 错误追踪 + 性能监控
-- **飞书通知** — Webhook 告警
-- **API 文档** — Swagger UI（开发环境自动开启，生产环境关闭）
-- **Docker 部署** — Traefik 反代 + PostgreSQL + 自动备份 + 数据库迁移
-- **GitHub Actions CI** — 单元测试 + Compose 部署验证
+- **请求日志** — IP（支持 X-Forwarded-For）、路径、参数、耗时、敏感参数脱敏
+- **API 文档** — FastAPI 自动生成 Swagger UI，开发环境自动开启，生产环境关闭
+- **质量控制** — 代码提交前通过Ruff/Mypy自动代码静态审查，代码提交后CICD流程进行单元测试、Docker Compose 部署验证，确保业务功能正常
+- **错误追踪** — 使用Sentry进行系统错误追踪和性能监控，告警自动转发为飞书卡片消息
+- **多环境流程** — 开发、预发布、生产，环境配置隔离，部署流程脚本化
+- **容器化部署** — 多阶段镜像构建、Traefik 反代、数据库定时备份与迁移，deploy.sh 一键部署
 
 ## 环境要求
 
