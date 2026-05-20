@@ -120,57 +120,23 @@ uv run pre-commit run --all-files    # 手动全量检查
 
 所有检查通过后方可合并 PR。
 
-## 部署
+## 环境变量
 
-### 环境配置
-
-提供三套环境配置：
+提供三套环境配置文件：
 
 | 文件 | 环境 | 说明 |
 |------|------|------|
-| `.env.dev` | 开发 | DB 在本地，SQL 日志开启 |
-| `.env.staging` | 预发布 | DB 在 Docker，阿里云 ACR 镜像 |
-| `.env.prod` | 生产 | DB 在 Docker，阿里云 ACR 镜像 |
+| `.env.dev` | 开发 | 本地环境运行 |
+| `.env.staging` | 预发布 | Docker Compose方式运行 |
+| `.env.prod` | 生产 | Docker Compose方式运行 |
 
-### 部署命令
-
-```bash
-# 部署生产环境
-bash deploy.sh prod
-
-# 部署预发布环境
-bash deploy.sh staging
-```
-
-`deploy.sh` 执行流程：
-1. 同步配置（`.env.{env}` → `.env`）
-2. 拉取最新镜像（阿里云 ACR）
-3. 启动数据库
-4. 备份数据库
-5. 执行数据库迁移
-6. 启动服务
-7. 健康检查
-
-### 架构
-
-```
-客户端 → Traefik(:80) → Backend(:8000) → PostgreSQL(:5432)
-```
-
-### 镜像构建与推送
-
-```bash
-docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG} .
-docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
-```
-
-## 环境变量
+变量说明：
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `APP_ENV` | dev | 环境（dev / staging / prod） |
 | `LOG_LEVEL` | INFO | 日志级别 |
-| `DB_DEBUG` | True | 是否打印 SQL |
+| `DB_DEBUG` | False | 是否打印 SQL |
 | `WORKERS` | 4 | Worker 进程数 |
 | `POSTGRES_SERVER` | localhost | 数据库地址 |
 | `POSTGRES_PORT` | 5432 | 数据库端口 |
@@ -183,9 +149,62 @@ docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
 | `SENTRY_DSN` | | Sentry DSN |
 | `SENTRY_SAMPLE_RATE` | 0.1 | Sentry 采样率 |
 | `FEISHU_WEBHOOK_URL` | | 飞书 Webhook 地址 |
-| `DOCKER_REGISTRY` | | 镜像仓库地址（生产） |
-| `DOCKER_IMAGE` | | 镜像名（生产） |
-| `DOCKER_TAG` | | 镜像标签（生产） |
+| `DOCKER_REGISTRY` | | 镜像仓库地址 |
+| `DOCKER_IMAGE` | | 镜像名 |
+| `DOCKER_TAG` | | 镜像版本 |
 
+## 部署
 
-test merge
+### 镜像构建
+
+Docker 镜像托管在阿里云 ACR（容器镜像服务）。在 `.env.prod` 中配置 `DOCKER_REGISTRY`、`DOCKER_IMAGE`、`DOCKER_TAG`（见环境变量表），然后执行 `bash deploy.sh` 即可部署。
+
+镜像打包有两种方式：
+
+**方式一：ACR 自动构建**
+
+向 GitHub 推送 `release-v$version` 格式的 tag 时，自动触发阿里云 ACR 构建镜像，镜像版本为 tag 中的 `$version` 部分：
+
+```bash
+git tag release-v0.2.0
+git push origin release-v0.2.0
+# 构建完成后，更新 .env.prod 中的 DOCKER_TAG 并重新部署
+```
+
+**方式二：手动构建推送**
+
+本地构建镜像并推送到阿里云 ACR：
+
+```bash
+docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG} .
+docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
+```
+
+### 部署命令
+
+```bash
+# 部署生产环境
+bash deploy.sh
+
+# 部署预发布环境
+bash deploy.sh staging
+```
+
+`deploy.sh` 执行流程：
+1. 同步配置（`.env.{env}` → `.env`）
+2. 拉取最新镜像
+3. 启动数据库
+4. 备份数据库
+5. 执行数据库迁移
+6. 启动服务
+7. 健康检查
+
+### 服务模块
+
+| 服务 | 说明 |
+|------|------|
+| `db` | 数据库 |
+| `backend` | FastAPI 应用，生产环境使用阿里云 ACR 镜像 |
+| `traefik` | 反向代理，监听 80 端口，将请求转发到 backend |
+| `db_migrate` | 数据库迁移，使用 `migrate` profile，deploy.sh 中通过 `$DC run --rm db_migrate` 一次性执行 |
+| `db_backup` | 数据库定时备份，基于 crond 每日自动备份到 `db_backup/` 目录 |

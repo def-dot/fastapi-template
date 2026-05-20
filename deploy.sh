@@ -45,6 +45,7 @@ if ! $DC run --rm db_migrate; then
     echo "恢复步骤："
     echo "  1. 查看最新备份： ls -lt db_backup/"
     echo "  2. 恢复数据库：   gunzip -c db_backup/db_XXX.sql.gz | $DC exec -T db psql -U postgres fastapi_template"
+    echo "  3. 回退镜像版本： 修改 .env.${ENV} 中 DOCKER_TAG 为上一版本，重新执行 bash deploy.sh ${ENV}"
     exit 1
 fi
 
